@@ -38,10 +38,45 @@ def main(args):
     ## 2. Then we must prepare it. This is where you can create a validation set, normalize, add bias, etc.
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
-        ### WRITE YOUR CODE HERE
-        pass
+        # Split training data to create a validation set
+        validation_ratio = 0.2  # Using 20% of training data for validation
+        num_val_samples = int(len(xtrain) * validation_ratio)
+        
+        # Shuffle indices
+        indices = np.random.permutation(len(xtrain))
+        train_indices = indices[num_val_samples:]
+        val_indices = indices[:num_val_samples]
+        
+        # Create validation set
+        xval = xtrain[val_indices]
+        yval = ytrain[val_indices]
+        
+        # Update training set
+        xtrain = xtrain[train_indices]
+        ytrain = ytrain[train_indices]
+        
+        # Use validation set for evaluation
+        xtest = xval
+        ytest = yval
+        
+        print(f"Training set size: {len(xtrain)}")
+        print(f"Validation set size: {len(xval)}")
+    else:
+        print(f"Training set size: {len(xtrain)}")
+        print(f"Test set size: {len(xtest)}")
+    
+    # Normalize features (important for logistic regression)
 
-    ### WRITE YOUR CODE HERE to do any other data processing
+    # First, calculate the means and standard deviations
+    means = np.mean(xtrain, axis=0, keepdims=True)
+    stds = np.std(xtrain, axis=0, keepdims=True)
+    stds[stds == 0] = 1  # Avoid division by zero
+
+    # Then normalize the training data
+    xtrain_normalized = normalize_fn(xtrain, means, stds)
+
+    # And later normalize the test data using the same means and stds
+    xtest_normalized = normalize_fn(xtest, means, stds)
 
     ## 3. Initialize the method you want to use.
 
@@ -52,16 +87,23 @@ def main(args):
     # Follow the "DummyClassifier" example for your methods
     if args.method == "dummy_classifier":
         method_obj = DummyClassifier(arg1=1, arg2=2)
-
-    elif ...:  ### WRITE YOUR CODE HERE
-        pass
+    elif args.method == "logistic_regression":
+        method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
+    elif args.method == "knn":
+        method_obj = KNN(K=args.K)
+    elif args.method == "kmeans":
+        method_obj = KMeans(K=args.K, max_iters=args.max_iters)
+    else:
+        raise ValueError(f"Unknown method: {args.method}")
 
     ## 4. Train and evaluate the method
     # Fit (:=train) the method on the training data for classification task
-    preds_train = method_obj.fit(xtrain, ytrain)
+    print(f"\nTraining {args.method}...")
+    preds_train = method_obj.fit(xtrain_normalized, ytrain)
 
     # Predict on unseen data
-    preds = method_obj.predict(xtest)
+    print("Evaluating on test set...")
+    preds = method_obj.predict(xtest_normalized)
 
     # Report results: performance on train and valid/test sets
     acc = accuracy_fn(preds_train, ytrain)
@@ -72,7 +114,39 @@ def main(args):
     macrof1 = macrof1_fn(preds, ytest)
     print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-    ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
+    if args.method == "logistic_regression" and not args.test:
+        print("\nHyperparameter search for logistic regression:")
+        best_acc = 0
+        best_lr = args.lr
+        best_max_iters = args.max_iters
+        
+        # We try different learning rates
+        learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+        max_iters_options = [100, 300, 500, 1000]
+        
+        for lr in learning_rates:
+            for max_iters in max_iters_options:
+                print(f"  Testing lr={lr}, max_iters={max_iters}...")
+                
+                # Initialize and train model
+                lr_model = LogisticRegression(lr=lr, max_iters=max_iters)
+                lr_model.fit(xtrain_normalized, ytrain)
+                
+                # Evaluate on validation set
+                val_preds = lr_model.predict(xtest_normalized)
+                val_acc = accuracy_fn(val_preds, ytest)
+                
+                print(f"    Validation accuracy: {val_acc:.3f}%")
+                
+                # Update best parameters if better
+                if val_acc > best_acc:
+                    best_acc = val_acc
+                    best_lr = lr
+                    best_max_iters = max_iters
+        
+        print(f"\nBest hyperparameters: lr={best_lr}, max_iters={best_max_iters}")
+        print(f"Best validation accuracy: {best_acc:.3f}%")
+    ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc. mettez d'autres trucs pour vos methodes les kheys avec un  if args.method == "votre methode" and not args.test:
 
 
 if __name__ == "__main__":
