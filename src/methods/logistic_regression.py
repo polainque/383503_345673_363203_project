@@ -102,6 +102,6 @@ class LogisticRegression(object):
         
         # Convert one-hot encoded predictions back to labels
         n_classes = self.weights.shape[0]
-        pred_labels = onehot_to_label(pred_onehot, n_classes)
+        pred_labels = onehot_to_label(pred_onehot)
         
         return pred_labels
