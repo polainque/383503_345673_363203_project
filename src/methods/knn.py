@@ -27,12 +27,10 @@ class KNN(object):
                 pred_labels (np.array): labels of shape (N,)
         """
 
-        ##
-        ###
-        #### YOUR CODE HERE!
-        ###
-        ##
-        return pred_labels
+        self.training_data = training_data
+        self.training_labels = training_labels
+
+        return self.predict(training_data)
 
     def predict(self, test_data):
         """
@@ -43,9 +41,25 @@ class KNN(object):
             Returns:
                 test_labels (np.array): labels of shape (N,)
         """
-        ##
-        ###
-        #### YOUR CODE HERE!
-        ###
-        ##
+        test_labels = np.empty(test_data.shape[0], dtype=self.training_labels.dtype)
+        
+        for i in range(test_data.shape[0]):
+            test_sample = test_data[i]
+
+            # Compute the Euclidean distance between a single test sample and all the training samples
+            # while avoiding rounding errors
+            dists = np.sqrt(np.maximum(np.sum((self.training_data - test_sample)**2, axis=1), 0))
+
+            # find the nearest neighbors
+            nn_indices = np.argsort(dists)[:self.k]
+
+            # find the labels of the nearest neighbors
+            neighbor_labels = self.training_labels[nn_indices]
+            
+            # vote (classification) or average (regression)
+            if self.task_kind == "classification":
+                test_labels[i] = np.argmax(np.bincount(neighbor_labels))
+            else:  # regression
+                test_labels[i] = np.mean(neighbor_labels)
+        
         return test_labels
