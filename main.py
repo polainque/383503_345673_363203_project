@@ -151,6 +151,7 @@ def main(args):
         print(f"Best validation accuracy: {best_acc:.3f}%")
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc. mettez d'autres trucs pour vos methodes les kheys avec un  if args.method == "votre methode" and not args.test:
     if args.method == "kmeans" and not args.test:
+        #claire la neuil
         print("\nHyperparameter search for KMeans:")
         best_acc = 0
         best_k = args.K
