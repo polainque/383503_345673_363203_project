@@ -63,9 +63,10 @@ class TestProject(unittest.TestCase):
         # Methods
         method_path = src_path / "methods"
         self.assertTrue(method_path.exists(), f"{method_path} not found")
-        for file in ["__init__.py", "dummy_methods.py", "logistic_regression.py", "knn.py"]:
+        for file in ["__init__.py", "dummy_methods.py", "logistic_regression.py", "knn.py", "kmeans.py"]:
             with self.subTest(f"Checking file methods/{file}"):
                 self.assertTrue((method_path / file).exists(), f"No file {file} found at {method_path}")
+
 
     def _import_and_test(self, name, class_name, *args, **kwargs):
         """Test the import of the method and its functions."""
@@ -103,12 +104,12 @@ class TestProject(unittest.TestCase):
                                   arg1=1)
 
     def test_3a_knn(self):
-        """Test K-Means."""
+        """Test KNN."""
         self.title("Testing KNN")
 
         knn_model = self._import_and_test("knn", "KNN", k=1)
 
-        #  Test on easy dummy data
+        #  Test on easy dummy data
         training_data = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
         training_labels = np.array([0, 1, 2, 3])
         test_data = np.array([[0., 0.1], [1.2, -0.2], [0.1, 0.9], [20., 20.]])
@@ -126,7 +127,7 @@ class TestProject(unittest.TestCase):
         logistic_regression = self._import_and_test("logistic_regression", "LogisticRegression",
                                                     lr=1e-3, max_iters=500)
 
-        #  Test on easy dummy data
+        #  Test on easy dummy data
         N = 20
         training_data = np.concatenate([
             np.linspace(-5, -0.25, N // 2)[:, None],
@@ -143,25 +144,57 @@ class TestProject(unittest.TestCase):
         self.assertTrue((pred_labels_test == test_labels).all(),
                         f"LogisticRegression.predict() is not working on dummy data")
 
-    def test_3c_linear_regression(self):
-        """Test Linear Regression."""
-        self.title("Testing Linear Regression")
+    def test_3c_kmeans(self):
+        """Test K-Means clustering."""
+        self.title("Testing K-Means")
 
-        LR_model = self._import_and_test("linear_regression", "LinearRegression", lmda=0)
+        # Create a KMeans model with the correct parameter (max_iters instead of k)
+        kmeans_model = self._import_and_test("kmeans", "KMeans", max_iters=100)
 
-        #  Test on easy dummy data
-        N = 20
-        training_data = np.linspace(-1, 1, N)[:, None]
-        training_labels = 2 * training_data
-        test_data = np.random.rand(N, 1) * 2 - 1
-        test_labels = 2 * test_data
+        # Test on simple clustered data - create 3 well-separated clusters
+        np.random.seed(42)  # For reproducibility
+        # Create 3 distinct clusters with 20 points each
+        cluster1 = np.random.randn(20, 2) + np.array([5, 5])
+        cluster2 = np.random.randn(20, 2) + np.array([-5, 5])
+        cluster3 = np.random.randn(20, 2) + np.array([0, -5])
+
+        training_data = np.vstack([cluster1, cluster2, cluster3])
+
+        # Create labels for each cluster (needed for the fit interface)
+        # Note: The actual KMeans implementation may use these just to determine K
+        training_labels = np.concatenate([np.zeros(20), np.ones(20), 2*np.ones(20)])
+
+        # Test data - one point from each clear cluster region
+        test_data = np.array([[5, 5], [-5, 5], [0, -5]])
+
         with no_print():
-            pred_labels_train = LR_model.fit(training_data, training_labels)
-            pred_labels_test = LR_model.predict(test_data)
-        self.assertTrue(np.isclose(pred_labels_train, training_labels).all(),
-                        f"LinearRegression.fit() is not working on dummy data")
-        self.assertTrue(np.isclose(pred_labels_test, test_labels).all(),
-                        f"LinearRegression.predict() is not working on dummy data")
+            # Get the cluster assignments from fit
+            cluster_assignments = kmeans_model.fit(training_data, training_labels)
+            # Predict clusters for test points
+            test_assignments = kmeans_model.predict(test_data)
+
+        # Verify results
+        self.assertIsInstance(cluster_assignments, np.ndarray,
+                            "KMeans.fit() should output cluster assignments as an array")
+        self.assertEqual(len(cluster_assignments), len(training_data),
+                       "KMeans.fit() should return assignments for each data point")
+
+        # Since K-means is unsupervised, the actual cluster IDs might not match our original labeling
+        # We check that points from each true cluster stayed together in the assignments
+
+        # Check each of our ground truth clusters
+        for i in range(3):
+            # Get points from the same true cluster
+            mask = training_labels == i
+            # Their assigned clusters should all be the same
+            unique_assignments = np.unique(cluster_assignments[mask])
+            self.assertEqual(len(unique_assignments), 1,
+                           f"Points from the same true cluster {i} got split into different clusters")
+
+        # Our test points should be assigned to three different clusters
+        unique_test_clusters = np.unique(test_assignments)
+        self.assertEqual(len(unique_test_clusters), 3,
+                       "Test points from different clusters should get different assignments")
 
 
 def warn(msg):
