@@ -7,7 +7,7 @@ class KMeans(object):
     kNN classifier object.
     """
 
-    def __init__(self, max_iters=500):
+    def __init__(self, K=3, max_iters=500):
         """
         Call set_arguments function of this class.
         """
