@@ -1,6 +1,9 @@
 import argparse
 
 import numpy as np
+import matplotlib.pyplot as plt
+import time
+
 
 from src.data import load_data
 from src.methods.dummy_methods import DummyClassifier
@@ -95,15 +98,20 @@ def main(args):
         method_obj = KMeans(K=args.K, max_iters=args.max_iters)
     else:
         raise ValueError(f"Unknown method: {args.method}")
-
     ## 4. Train and evaluate the method
     # Fit (:=train) the method on the training data for classification task
+    s1_train = time.time()
     print(f"\nTraining {args.method}...")
     preds_train = method_obj.fit(xtrain_normalized, ytrain)
+    s2_train = time.time()
+    print(f"\nMethod {args.method} takes {s2_train-s1_train} seconds to train.")
 
     # Predict on unseen data
-    print("Evaluating on test set...")
+    s1_pred = time.time()
+    print("\nEvaluating on test set...")
     preds = method_obj.predict(xtest_normalized)
+    s2_pred = time.time()
+    print(f"\nMethod {args.method} takes {s2_pred-s1_pred} seconds to predict.")
 
     # Report results: performance on train and valid/test sets
     acc = accuracy_fn(preds_train, ytrain)
@@ -115,22 +123,23 @@ def main(args):
     print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     if args.method == "logistic_regression" and not args.test:
-        print("\nGenerating simple visualizations...")
-        #best_lr, best_iters = create_simple_visualizations(xtrain, ytrain, xtest, ytest, args)
-    
         print("\nHyperparameter search for logistic regression:")
         best_acc = 0
         best_lr = args.lr
         best_max_iters = args.max_iters
         
         # We try different learning rates
-        learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
-        max_iters_options = [100, 300, 500, 1000]
+        learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1]
+        max_iters_options = [10, 30, 35, 40, 45, 50, 100, 200, 300, 400, 500, 1000]
         
-        for lr in learning_rates:
-            for max_iters in max_iters_options:
-                print(f"  Testing lr={lr}, max_iters={max_iters}...")
-                
+        # Create dictionaries to store results
+        results = {max_iter: [] for max_iter in max_iters_options}
+        all_accuracies = []
+        
+        for max_iters in max_iters_options:
+            accuracies = []
+            
+            for lr in learning_rates:
                 # Initialize and train model
                 lr_model = LogisticRegression(lr=lr, max_iters=max_iters)
                 lr_model.fit(xtrain_normalized, ytrain)
@@ -139,19 +148,61 @@ def main(args):
                 val_preds = lr_model.predict(xtest_normalized)
                 val_acc = accuracy_fn(val_preds, ytest)
                 
-                print(f"    Validation accuracy: {val_acc:.3f}%")
+                # Store accuracy for this combination
+                accuracies.append(val_acc)
+                all_accuracies.append((lr, max_iters, val_acc))
                 
                 # Update best parameters if better
                 if val_acc > best_acc:
                     best_acc = val_acc
                     best_lr = lr
                     best_max_iters = max_iters
+            
+            # Store accuracies for this max_iters value
+            results[max_iters] = accuracies
         
-        print(f"\nBest hyperparameters: lr={best_lr}, max_iters={best_max_iters}")
+        # Create directory for plots if it doesn't exist
+        os.makedirs('plots', exist_ok=True)
+
+        print(f"Best hyperparameters: lr={best_lr:.1e}, max_iters={best_max_iters}")
         print(f"Best validation accuracy: {best_acc:.3f}%")
-    ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc. mettez d'autres trucs pour vos methodes les kheys avec un  if args.method == "votre methode" and not args.test:
+
+        # Extract and sort unique learning rates and max_iters
+        lrs = sorted(set(lr for lr, _, _ in all_accuracies))
+
+        max_iters_list = sorted(set(it for _, it, _ in all_accuracies))
+
+        # Create accuracy matrix (rows = max_iters, cols = learning_rates)
+        accuracy_matrix = np.zeros((len(max_iters_list), len(lrs)))
+
+        # Fill accuracy matrix
+        for i, max_iter in enumerate(max_iters_list):
+            for j, lr in enumerate(lrs):
+                for acc_lr, acc_iter, acc in all_accuracies:
+                    if acc_lr == lr and acc_iter == max_iter:
+                        accuracy_matrix[i, j] = acc
+
+        # Create grid for plotting
+        log_lrs = np.log10(lrs)  # Log scale for better visualization
+        X, Y = np.meshgrid(log_lrs, max_iters_list)
+        Z = accuracy_matrix
+
+        # Plot 3D surface
+        fig = plt.figure(figsize=(10, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        surf = ax.plot_surface(X, Y, Z, cmap='viridis', edgecolor='k')
+
+        ax.set_xlabel('log10(Learning Rate)')
+        ax.set_ylabel('Max Iterations')
+        ax.set_zlabel('Validation Accuracy')
+        ax.set_title('Validation Accuracy vs Learning Rate & Max Iterations')
+        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+
+        plt.tight_layout()
+        plt.savefig("plots/logistic_regression_hyperparam_surface.png")
+        plt.show()
+
     if args.method == "kmeans" and not args.test:
-        #claire la neuil
         print("\nHyperparameter search for KMeans:")
         best_acc = 0
         best_k = args.K
@@ -184,6 +235,8 @@ def main(args):
         
         print(f"\nBest hyperparameters: K={best_k}, max_iters={best_max_iters}")
         print(f"Best validation accuracy: {best_acc:.3f}%")
+
+### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
 if __name__ == "__main__":
     # Definition of the arguments that can be given through the command line (terminal).

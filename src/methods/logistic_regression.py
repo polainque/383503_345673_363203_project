@@ -1,8 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-
-
-from ..utils import get_n_classes, label_to_onehot, onehot_to_label, accuracy_fn
+from ..utils import get_n_classes, label_to_onehot
 
 
 class LogisticRegression(object):
@@ -49,6 +46,7 @@ class LogisticRegression(object):
         Returns:
             pred_labels (array): target of shape (N,)
         """
+        training_data = (training_data - np.mean(training_data, axis=0)) / np.std(training_data, axis=0)
         N, D = training_data.shape
         # Get number of classes and convert labels to one-hot encoding
         n_classes = get_n_classes(training_labels)
@@ -76,7 +74,7 @@ class LogisticRegression(object):
             
             # Gradient for bias: sum(error) / N 
             grad_b = np.sum(error, axis=0) / N  # (C,)
-            
+
             # Update weights and bias
             self.weights -= self.lr * grad_w
             self.bias -= self.lr * grad_b
@@ -100,132 +98,3 @@ class LogisticRegression(object):
         pred_labels = np.argmax(scores, axis=1)
         
         return pred_labels
-
-
-
-
-def create_simple_visualizations(xtrain, ytrain, xtest, ytest, args):
-    """
-    Create simple visualizations for logistic regression performance with different hyperparameters.
-    
-    Arguments:
-        xtrain, ytrain: Training data and labels
-        xtest, ytest: Test data and labels
-        args: Command line arguments
-    """
-    # Create a directory for saving plots if it doesn't exist
-    import os
-    if not os.path.exists('plots'):
-        os.makedirs('plots')
-    
-    print("\nRunning hyperparameter search for visualization...")
-    
-    # 1. Learning rate vs. accuracy (with fixed iterations)
-    learning_rates = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
-    max_iters = 500  # Fixed iterations
-    
-    train_accuracies = []
-    test_accuracies = []
-    
-    for lr in learning_rates:
-        print(f"Testing learning rate: {lr} with {max_iters} iterations")
-        model = LogisticRegression(lr=lr, max_iters=max_iters)
-        train_preds = model.fit(xtrain, ytrain)
-        test_preds = model.predict(xtest)
-        
-        train_acc = accuracy_fn(train_preds, ytrain)
-        test_acc = accuracy_fn(test_preds, ytest)
-        
-        train_accuracies.append(train_acc)
-        test_accuracies.append(test_acc)
-    
-    # Plot learning rate vs. accuracy
-    plt.figure(figsize=(10, 6))
-    plt.plot(np.log10(learning_rates), train_accuracies, 'o-', label='Training Accuracy')
-    plt.plot(np.log10(learning_rates), test_accuracies, 's-', label='Test Accuracy')
-    plt.title(f'Accuracy vs. Learning Rate (Max Iterations = {max_iters})')
-    plt.xlabel('Learning Rate (log10)')
-    plt.ylabel('Accuracy (%)')
-    plt.xticks(np.log10(learning_rates), [f'{lr:.1e}' for lr in learning_rates], rotation=45)
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig('plots/accuracy_vs_lr.png')
-    plt.close()
-    
-    # 2. Iterations vs. accuracy (with best learning rate)
-    best_lr_idx = np.argmax(test_accuracies)
-    best_lr = learning_rates[best_lr_idx]
-    print(f"Best learning rate found: {best_lr}")
-    
-    iterations_list = [10, 50, 100, 200, 300, 500, 750, 1000]
-    train_accuracies_iter = []
-    test_accuracies_iter = []
-    
-    for iters in iterations_list:
-        print(f"Testing iterations: {iters} with learning rate {best_lr}")
-        model = LogisticRegression(lr=best_lr, max_iters=iters)
-        train_preds = model.fit(xtrain, ytrain)
-        test_preds = model.predict(xtest)
-        
-        train_acc = accuracy_fn(train_preds, ytrain)
-        test_acc = accuracy_fn(test_preds, ytest)
-        
-        train_accuracies_iter.append(train_acc)
-        test_accuracies_iter.append(test_acc)
-    
-    # Plot iterations vs. accuracy
-    plt.figure(figsize=(10, 6))
-    plt.plot(iterations_list, train_accuracies_iter, 'o-', label='Training Accuracy')
-    plt.plot(iterations_list, test_accuracies_iter, 's-', label='Test Accuracy')
-    plt.title(f'Accuracy vs. Iterations (Learning Rate = {best_lr:.1e})')
-    plt.xlabel('Number of Iterations')
-    plt.ylabel('Accuracy (%)')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig('plots/accuracy_vs_iterations.png')
-    plt.close()
-    
-    # 3. Grid search visualization (if requested)
-    if args.grid_search:
-        iterations_grid = [100, 300, 500, 800]
-        lr_grid = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
-        
-        results = np.zeros((len(iterations_grid), len(lr_grid)))
-        
-        for i, iters in enumerate(iterations_grid):
-            for j, lr in enumerate(lr_grid):
-                print(f"Grid search: iterations={iters}, lr={lr}")
-                model = LogisticRegression(lr=lr, max_iters=iters)
-                model.fit(xtrain, ytrain)
-                test_preds = model.predict(xtest)
-                test_acc = accuracy_fn(test_preds, ytest)
-                results[i, j] = test_acc
-        
-        # Create heatmap
-        plt.figure(figsize=(10, 8))
-        plt.imshow(results, interpolation='nearest', cmap='viridis')
-        plt.colorbar(label='Test Accuracy (%)')
-        plt.title('Test Accuracy for different Learning Rates and Iterations')
-        plt.xlabel('Learning Rate')
-        plt.ylabel('Max Iterations')
-        plt.xticks(np.arange(len(lr_grid)), [f'{lr:.1e}' for lr in lr_grid])
-        plt.yticks(np.arange(len(iterations_grid)), iterations_grid)
-        
-        # Add text annotations
-        for i in range(len(iterations_grid)):
-            for j in range(len(lr_grid)):
-                plt.text(j, i, f'{results[i, j]:.1f}', 
-                        ha="center", va="center", 
-                        color="white" if results[i, j] > np.mean(results) else "black")
-        
-        plt.tight_layout()
-        plt.savefig('plots/grid_search.png')
-        plt.close()
-    
-    # Find and return best hyperparameters
-    best_lr = learning_rates[np.argmax(test_accuracies)]
-    best_iters = iterations_list[np.argmax(test_accuracies_iter)]
-    
-    return best_lr, best_iters
