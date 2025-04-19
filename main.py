@@ -207,37 +207,116 @@ def main(args):
         best_acc = 0
         best_k = args.K
         best_max_iters = args.max_iters
-        
+
         # Try different K values and max iterations
         k_values = [2, 3, 4, 5, 8, 10]
         max_iters_options = [100, 300, 500, 1000]
-        
+
+        # Store results for plotting
+        results = []
+        training_times = []
+        prediction_times = []
+
         for k in k_values:
             for max_iters in max_iters_options:
                 print(f"  Testing K={k}, max_iters={max_iters}...")
                 
                 # Initialize and train model
                 kmeans_model = KMeans(K=k, max_iters=max_iters)
+                
+                # Measure training time
+                start_time = time.time()
                 kmeans_model.fit(xtrain_normalized, ytrain)
+                end_time = time.time()
+                train_time = end_time - start_time
+                training_times.append((k, max_iters, train_time))
+                
+                # Measure prediction time
+                start_time = time.time()
+                val_preds = kmeans_model.predict(xtest_normalized)
+                end_time = time.time()
+                pred_time = end_time - start_time
+                prediction_times.append((k, max_iters, pred_time))
                 
                 # Evaluate on validation set
-                val_preds = kmeans_model.predict(xtest_normalized)
                 val_acc = accuracy_fn(val_preds, ytest)
                 val_f1 = macrof1_fn(val_preds, ytest)
                 
+                # Store results for plotting
+                results.append((k, max_iters, val_acc, val_f1))
+                
                 print(f"    Validation accuracy: {val_acc:.3f}% - F1-score: {val_f1:.6f}")
+                print(f"    Training time: {train_time:.4f}s - Prediction time: {pred_time:.4f}s")
                 
                 # Update best parameters if better
                 if val_acc > best_acc:
                     best_acc = val_acc
                     best_k = k
                     best_max_iters = max_iters
-        
+
         print(f"\nBest hyperparameters: K={best_k}, max_iters={best_max_iters}")
         print(f"Best validation accuracy: {best_acc:.3f}%")
 
-### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
+        # Create visualizations
 
+        # 1. Plot accuracy vs. K for different max_iters
+        plt.figure(figsize=(12, 8))
+        for max_iter in max_iters_options:
+            k_values_plot = []
+            accuracies = []
+            for k, max_iters, acc, _ in results:
+                if max_iters == max_iter:
+                    k_values_plot.append(k)
+                    accuracies.append(acc)
+            plt.plot(k_values_plot, accuracies, marker='o', label=f'max_iters={max_iter}')
+
+        plt.title('Accuracy vs. Number of Clusters (K)')
+        plt.xlabel('Number of Clusters (K)')
+        plt.ylabel('Validation Accuracy (%)')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig('kmeans_accuracy_vs_k.png')
+        #plt.show(block=False)
+
+        # 2. Plot F1-score vs. K for different max_iters
+        plt.figure(figsize=(12, 8))
+        for max_iter in max_iters_options:
+            k_values_plot = []
+            f1_scores = []
+            for k, max_iters, _, f1 in results:
+                if max_iters == max_iter:
+                    k_values_plot.append(k)
+                    f1_scores.append(f1)
+            plt.plot(k_values_plot, f1_scores, marker='o', label=f'max_iters={max_iter}')
+
+        plt.title('F1-Score vs. Number of Clusters (K)')
+        plt.xlabel('Number of Clusters (K)')
+        plt.ylabel('F1-Score')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig('kmeans_f1_vs_k.png')
+        #plt.show(block=False)
+
+        
+        # 3. Plot training time vs. K
+        plt.figure(figsize=(12, 8))
+        for max_iter in max_iters_options:
+            k_values_plot = []
+            times = []
+            for k, max_iters, time_val in training_times:
+                if max_iters == max_iter:
+                    k_values_plot.append(k)
+                    times.append(time_val)
+            plt.plot(k_values_plot, times, marker='o', label=f'max_iters={max_iter}')
+
+        plt.title('Training Time vs. Number of Clusters (K)')
+        plt.xlabel('Number of Clusters (K)')
+        plt.ylabel('Training Time (seconds)')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig('kmeans_training_time_vs_k.png')
+        plt.show(block=False)
+            
 if __name__ == "__main__":
     # Definition of the arguments that can be given through the command line (terminal).
     # If an argument is not given, it will take its default value as defined below.
