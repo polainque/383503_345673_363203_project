@@ -411,6 +411,7 @@ def main(args):
             plt.show()  # Display the plot
         
         # 2. Confusion matrix visualization
+        """
         if args.method in ["logistic_regression", "knn", "kmeans"]:
             from sklearn.metrics import confusion_matrix
             import seaborn as sns
@@ -425,7 +426,7 @@ def main(args):
             plt.tight_layout()
             plt.savefig(f'heart_disease_confusion_matrix_{args.method}.png')
             plt.show()  # Display the plot
-        
+        """
         # 3. Feature distributions by class
         plt.figure(figsize=(15, 10))
         
