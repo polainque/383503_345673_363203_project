@@ -90,7 +90,7 @@ def main(args):
     elif args.method == "logistic_regression":
         method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
     elif args.method == "knn":
-        method_obj = KNN(K=args.K)
+        method_obj = KNN(args.K)
     elif args.method == "kmeans":
         method_obj = KMeans(K=args.K, max_iters=args.max_iters)
     else:
@@ -115,6 +115,9 @@ def main(args):
     print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     if args.method == "logistic_regression" and not args.test:
+        print("\nGenerating simple visualizations...")
+        #best_lr, best_iters = create_simple_visualizations(xtrain, ytrain, xtest, ytest, args)
+    
         print("\nHyperparameter search for logistic regression:")
         best_acc = 0
         best_lr = args.lr
