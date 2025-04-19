@@ -151,38 +151,38 @@ def main(args):
         print(f"Best validation accuracy: {best_acc:.3f}%")
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc. mettez d'autres trucs pour vos methodes les kheys avec un  if args.method == "votre methode" and not args.test:
     if args.method == "kmeans" and not args.test:
-    print("\nHyperparameter search for KMeans:")
-    best_acc = 0
-    best_k = args.K
-    best_max_iters = args.max_iters
-    
-    # Try different K values and max iterations
-    k_values = [2, 3, 4, 5, 8, 10]
-    max_iters_options = [100, 300, 500, 1000]
-    
-    for k in k_values:
-        for max_iters in max_iters_options:
-            print(f"  Testing K={k}, max_iters={max_iters}...")
-            
-            # Initialize and train model
-            kmeans_model = KMeans(K=k, max_iters=max_iters)
-            kmeans_model.fit(xtrain_normalized, ytrain)
-            
-            # Evaluate on validation set
-            val_preds = kmeans_model.predict(xtest_normalized)
-            val_acc = accuracy_fn(val_preds, ytest)
-            val_f1 = macrof1_fn(val_preds, ytest)
-            
-            print(f"    Validation accuracy: {val_acc:.3f}% - F1-score: {val_f1:.6f}")
-            
-            # Update best parameters if better
-            if val_acc > best_acc:
-                best_acc = val_acc
-                best_k = k
-                best_max_iters = max_iters
-    
-    print(f"\nBest hyperparameters: K={best_k}, max_iters={best_max_iters}")
-    print(f"Best validation accuracy: {best_acc:.3f}%")
+        print("\nHyperparameter search for KMeans:")
+        best_acc = 0
+        best_k = args.K
+        best_max_iters = args.max_iters
+        
+        # Try different K values and max iterations
+        k_values = [2, 3, 4, 5, 8, 10]
+        max_iters_options = [100, 300, 500, 1000]
+        
+        for k in k_values:
+            for max_iters in max_iters_options:
+                print(f"  Testing K={k}, max_iters={max_iters}...")
+                
+                # Initialize and train model
+                kmeans_model = KMeans(K=k, max_iters=max_iters)
+                kmeans_model.fit(xtrain_normalized, ytrain)
+                
+                # Evaluate on validation set
+                val_preds = kmeans_model.predict(xtest_normalized)
+                val_acc = accuracy_fn(val_preds, ytest)
+                val_f1 = macrof1_fn(val_preds, ytest)
+                
+                print(f"    Validation accuracy: {val_acc:.3f}% - F1-score: {val_f1:.6f}")
+                
+                # Update best parameters if better
+                if val_acc > best_acc:
+                    best_acc = val_acc
+                    best_k = k
+                    best_max_iters = max_iters
+        
+        print(f"\nBest hyperparameters: K={best_k}, max_iters={best_max_iters}")
+        print(f"Best validation accuracy: {best_acc:.3f}%")
 
 if __name__ == "__main__":
     # Definition of the arguments that can be given through the command line (terminal).
