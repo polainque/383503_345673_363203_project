@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import pandas as pd
 
 from src.data import load_data
 from src.methods.dummy_methods import DummyClassifier
@@ -11,6 +12,9 @@ from src.methods.knn import KNN
 from src.methods.kmeans import KMeans
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn
 import os
+
+# Add the UCI ML repo import
+from ucimlrepo import fetch_ucirepo
 
 np.random.seed(100)
 
@@ -36,6 +40,52 @@ def main(args):
     elif args.data_type == "original":
         data_dir = os.path.join(args.data_path, "dog-small-64")
         xtrain, xtest, ytrain, ytest = load_data(data_dir)
+    
+    # UCI HEART DISEASE DATASET
+    elif args.data_type == "heart_disease":
+        print("Loading UCI Heart Disease dataset...")
+        
+        # Fetch the dataset
+        heart_disease = fetch_ucirepo(id=45)
+        
+        # Get features and targets as pandas DataFrames
+        X = heart_disease.data.features 
+        y = heart_disease.data.targets 
+        
+        # Print dataset information
+        print("\nDataset Metadata:")
+        print(heart_disease.metadata)
+        print("\nVariables Information:")
+        print(heart_disease.variables)
+        
+        # Convert to numpy arrays for consistency with the rest of the code
+        X = X.values
+        y = y.values.ravel()  # Flatten to 1D array
+        
+        # Set up train/test split
+        if args.test:
+            # Use 80% of data for training, 20% for testing
+            np.random.seed(100)  # For reproducibility
+            indices = np.random.permutation(len(X))
+            train_size = int(0.8 * len(X))
+            train_indices = indices[:train_size]
+            test_indices = indices[train_size:]
+            
+            xtrain = X[train_indices]
+            ytrain = y[train_indices]
+            xtest = X[test_indices]
+            ytest = y[test_indices]
+        else:
+            # If we're not in test mode, use all data for training
+            xtrain = X
+            ytrain = y
+            xtest = X  # Will be overwritten by validation set creation below
+            ytest = y  # Will be overwritten by validation set creation below
+        
+        print(f"\nHeart Disease dataset loaded:")
+        print(f"Features shape: {X.shape}")
+        print(f"Target shape: {y.shape}")
+        print(f"Number of classes: {len(np.unique(y))}")
 
     ## 2. Then we must prepare it. This is where you can create a validation set, normalize, add bias, etc.
     # Make a validation set (it can overwrite xtest, ytest)
@@ -151,7 +201,7 @@ def main(args):
         
         print(f"\nBest hyperparameters: lr={best_lr}, max_iters={best_max_iters}")
         print(f"Best validation accuracy: {best_acc:.3f}%")
-    ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc. mettez d'autres trucs pour vos methodes les kheys avec un  if args.method == "votre methode" and not args.test:
+    
     if args.method == "kmeans" and not args.test:
         print("\nHyperparameter search for KMeans:")
         best_acc = 0
@@ -226,7 +276,7 @@ def main(args):
         plt.legend()
         plt.grid(True)
         plt.savefig('kmeans_accuracy_vs_k.png')
-        #plt.show(block=False)
+        plt.show()  # Display the plot
 
         # 2. Plot F1-score vs. K for different max_iters
         plt.figure(figsize=(12, 8))
@@ -245,7 +295,7 @@ def main(args):
         plt.legend()
         plt.grid(True)
         plt.savefig('kmeans_f1_vs_k.png')
-        #plt.show(block=False)
+        plt.show()  # Display the plot
 
         
         # 3. Plot training time vs. K
@@ -265,7 +315,91 @@ def main(args):
         plt.legend()
         plt.grid(True)
         plt.savefig('kmeans_training_time_vs_k.png')
-        plt.show(block=False)
+        plt.show()  # Display the plot
+
+    # Heart disease dataset-specific visualizations
+    if args.data_type == "heart_disease" and not args.test:
+        print("\nGenerating Heart Disease dataset visualizations...")
+        
+        # 1. Feature importance for Logistic Regression
+        if args.method == "logistic_regression":
+            # Get the trained model weights
+            weights = method_obj.weights
+            
+            # Get feature names
+            feature_names = heart_disease.data.features.columns
+            
+            # Plot feature importance
+            plt.figure(figsize=(12, 8))
+            
+            # For binary classification, use the weights directly
+            if weights.shape[0] == 1:
+                feature_importance = np.abs(weights[0])
+                feature_indices = np.argsort(feature_importance)[::-1]
+                
+                plt.bar(range(len(feature_importance)), 
+                        feature_importance[feature_indices], 
+                        align='center')
+                plt.xticks(range(len(feature_importance)), 
+                          [feature_names[i] for i in feature_indices], 
+                          rotation=90)
+            else:
+                # For multi-class, use the sum of absolute weights across classes
+                feature_importance = np.sum(np.abs(weights), axis=0)
+                feature_indices = np.argsort(feature_importance)[::-1]
+                
+                plt.bar(range(len(feature_importance)), 
+                        feature_importance[feature_indices], 
+                        align='center')
+                plt.xticks(range(len(feature_importance)), 
+                          [feature_names[i] for i in feature_indices], 
+                          rotation=90)
+            
+            plt.title('Feature Importance for Heart Disease Classification')
+            plt.tight_layout()
+            plt.savefig('heart_disease_feature_importance.png')
+            plt.show()  # Display the plot
+        
+        # 2. Confusion matrix visualization
+        if args.method in ["logistic_regression", "knn", "kmeans"]:
+            from sklearn.metrics import confusion_matrix
+            import seaborn as sns
+            
+            cm = confusion_matrix(ytest, preds)
+            
+            plt.figure(figsize=(8, 6))
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+            plt.title(f'Confusion Matrix - {args.method}')
+            plt.xlabel('Predicted Label')
+            plt.ylabel('True Label')
+            plt.tight_layout()
+            plt.savefig(f'heart_disease_confusion_matrix_{args.method}.png')
+            plt.show()  # Display the plot
+        
+        # 3. Feature distributions by class
+        plt.figure(figsize=(15, 10))
+        
+        # Get original data
+        X_orig = heart_disease.data.features
+        y_orig = heart_disease.data.targets.values.ravel()
+        
+        # Select a subset of important features to visualize
+        important_features = X_orig.columns[:5]  # Adjust as needed
+        
+        for i, feature in enumerate(important_features):
+            plt.subplot(2, 3, i+1)
+            
+            for class_val in np.unique(y_orig):
+                sns.kdeplot(X_orig[X_orig.index[y_orig == class_val]][feature], 
+                           label=f'Class {class_val}')
+            
+            plt.title(f'Distribution of {feature}')
+            plt.xlabel(feature)
+            plt.legend()
+        
+        plt.tight_layout()
+        plt.savefig('heart_disease_feature_distributions.png')
+        plt.show()  # Display the plot
             
 if __name__ == "__main__":
     # Definition of the arguments that can be given through the command line (terminal).
@@ -281,7 +415,7 @@ if __name__ == "__main__":
         "--data_path", default="data", type=str, help="path to your dataset"
     )
     parser.add_argument(
-        "--data_type", default="features", type=str, help="features/original(MS2)"
+        "--data_type", default="features", type=str, help="features/original(MS2)/heart_disease"
     )
     parser.add_argument(
         "--K", type=int, default=1, help="number of neighboring datapoints used for knn"
