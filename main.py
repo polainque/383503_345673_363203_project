@@ -198,6 +198,54 @@ def main(args):
         plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
         plt.show()
 
+    if args.method == "knn" and not args.test:
+
+        kmax = 40 if args.K < 40 else args.K
+        K = 5
+        k_range = np.arange(1, kmax+1)
+
+        # Cross Validation
+        t0 = time.time()
+        cv_val_accs, cv_val_f1s = KNN.run_cv_for_hyperparam(xtrain_normalized, ytrain, K, k_range)
+        print(f"\n5-Fold Cross Validation on {kmax} values of k in {time.time()-t0:.2f}s")
+
+        # pick best k by validation accuracy
+        best_idx = np.argmax(cv_val_accs)
+        best_k   = k_range[best_idx]
+        print(f"\nBest k by 5-Fold Cross Validation : {best_k} \n---> Validation accuracy = {cv_val_accs[best_idx]:.3f}\n---> F1-score = {cv_val_f1s[best_idx]:.3f}")
+
+        # Recomputing train performance on entire training data for each k
+        full_tr_accs = np.zeros_like(cv_val_accs)
+        full_tr_f1s  = np.zeros_like(cv_val_f1s)
+        for i, k in enumerate(k_range):
+            m = KNN(k=k)
+            pred = m.fit(xtrain_normalized, ytrain)
+            full_tr_accs[i] = accuracy_fn(pred, ytrain)
+            full_tr_f1s [i] = macrof1_fn(pred, ytrain)
+
+        # Final model on all training data to test model on test data
+        final = KNN(k=best_k)
+        pred_train = final.fit(xtrain_normalized, ytrain)
+        pred_test = final.predict(xtest_normalized)
+
+        tr_acc, tr_f1 = accuracy_fn(pred_train, ytrain), macrof1_fn(pred_train, ytrain)
+        te_acc, te_f1 = accuracy_fn(pred_test, ytest),  macrof1_fn(pred_test,  ytest)
+        print(f"\nFINAL [k={best_k}] : TRAIN accuracy = {tr_acc:.3f}%, F1-score = {tr_f1:.6f}")
+        print(f"FINAL [k={best_k}] : TEST  accuracy = {te_acc:.3f}%, F1-score = {te_f1:.6f}\n")
+
+        # CV and full‐train plot
+        plt.figure(figsize=(8,6))
+        plt.plot(k_range, cv_val_accs ,color = 'r', marker = '.',label="CV-validation Accuracy")
+        plt.plot(k_range, cv_val_f1s *100 ,color = 'r', linestyle = '--', marker = '.', label="CV-validation F1-score")
+        plt.plot(k_range, full_tr_accs , color = 'b',marker = '.', label="Full-train Accuracy")
+        plt.plot(k_range, full_tr_f1s * 100 , color = 'b', linestyle = '--',marker = '.',label="Full-train F1-score")
+        plt.axvline(best_k, color='k', linestyle =':', label=f"Best k = {best_k}")
+        plt.xlabel("k"); plt.ylabel("Score (%)")
+        plt.title("k-NN: CV vs Full-train Accuracy & F1-score over k")
+        plt.legend(); plt.grid(True)
+        plt.savefig("knn_train_test_curves.png")
+        plt.close()
+
     if args.method == "kmeans" and not args.test:
         print("\nHyperparameter search for KMeans:")
         best_acc = 0
