@@ -1,4 +1,5 @@
 import numpy as np
+from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn
 
 class KNN(object):
     """
@@ -56,10 +57,83 @@ class KNN(object):
             # find the labels of the nearest neighbors
             neighbor_labels = self.training_labels[nn_indices]
             
-            # vote (classification) or average (regression)
             if self.task_kind == "classification":
-                test_labels[i] = np.argmax(np.bincount(neighbor_labels))
-            else:  # regression
-                test_labels[i] = np.mean(neighbor_labels)
+                neighbor_labels_int = neighbor_labels.astype(int)
+                test_labels[i] = np.argmax(np.bincount(neighbor_labels_int))
+
         
         return test_labels
+    
+    @staticmethod
+    def KFold_cross_validation_KNN(X, Y, K, k):
+        """
+            Perform K-fold cross-validation for k-NN.
+
+            Arguments:
+                X : (NxD) training data
+                Y : (N,)   training labels
+                K : number of folds
+                k : the k-NN hyperparameter
+
+            Returns:
+                val_accs : mean validation accuracy for each k
+
+                val_F1s  : mean validation for F1-score for each k
+                
+        """
+        N = X.shape[0]
+        idx = np.random.permutation(N)
+        fold_size = N // K
+
+        va_accs, va_f1s = [], []
+
+        for fold in range(K):
+            start = fold * fold_size
+            end = (fold + 1) * fold_size if fold < K - 1 else N
+
+            va_idx = idx[start:end]
+            tr_idx = np.setdiff1d(idx, va_idx, assume_unique=True)
+
+            X_tr, Y_tr = X[tr_idx], Y[tr_idx]
+            X_va, Y_va = X[va_idx], Y[va_idx]
+
+            model = KNN(k=k)
+            model.fit(X_tr, Y_tr)
+
+            pred_va = model.predict(X_va)
+            va_accs.append(accuracy_fn(pred_va, Y_va))
+            va_f1s.append(macrof1_fn(pred_va, Y_va))
+
+        return (
+            float(np.mean(va_accs)),
+            float(np.mean(va_f1s))
+        )
+
+
+    @staticmethod 
+    def run_cv_for_hyperparam(X, Y, K, k_range):
+        """
+        Run K-fold cross-validation for each k in k_range.
+
+            Arguments:
+                X  : (NxD) training data
+                Y  : (N,)  training labels
+                K  : number of folds
+                k_range : list or array of k values to try
+
+            Returns:
+                va_acc : mean validation accuracy over the K folds
+                va_f1  : mean validation F1 score over the K folds
+        """
+        test_accs, test_F1s = [], []
+
+        for k in k_range:
+            test_acc, test_f1 = KNN.KFold_cross_validation_KNN(X, Y, K, k)
+
+            test_accs.append(test_acc)
+            test_F1s.append(test_f1)
+
+        return (
+            np.array(test_accs),
+            np.array(test_F1s)
+        )

@@ -1,6 +1,5 @@
 import numpy as np
 
-
 # Generally utilizes
 ##################
 def label_to_onehot(labels, C=None):
@@ -123,3 +122,4 @@ def mse_fn(pred, gt):
     loss = (pred - gt) ** 2
     loss = np.mean(loss)
     return loss
+

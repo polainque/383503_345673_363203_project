@@ -1,11 +1,12 @@
 import argparse
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 import seaborn as sns
 import time
-
+import os
 
 from src.data import load_data
 from src.methods.dummy_methods import DummyClassifier
@@ -13,7 +14,6 @@ from src.methods.logistic_regression import LogisticRegression
 from src.methods.knn import KNN
 from src.methods.kmeans import KMeans
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn
-import os
 
 np.random.seed(100)
 
@@ -184,46 +184,19 @@ def main(args):
                     if acc_lr == lr and acc_iter == max_iter:
                         accuracy_matrix[i, j] = acc
 
-    #plt.figure(figsize=(12, 6))
-#
-    #custom_cmap = ListedColormap(['#A63446', '#E8846B']) 
-#
-    ## Set vmin and vmax to the min and max values in your data
-    #vmin = np.min(accuracy_matrix)
-    #vmax = np.max(accuracy_matrix)
-#
-    ## Create the heatmap with the custom colormap
-    #sns.heatmap(
-    #    accuracy_matrix,
-    #    xticklabels=[f"{lr:.0e}" for lr in lrs],
-    #    yticklabels=max_iters_list,
-    #    annot=True, 
-    #    fmt=".2f",
-    #    cmap=custom_cmap,
-    #    vmin=vmin,
-    #    vmax=vmax,
-    #    cbar_kws={'ticks': [vmin, vmax]}  # Only show min and max on colorbar
-    #)
-#
-    #plt.xlabel("Learning Rate")
-    #plt.ylabel("Max Iterations")
-    #plt.title("Validation Accuracy Heatmap (Logistic Regression)")
-    #plt.tight_layout()
-    #plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
-    #plt.show()
-    plt.figure(figsize=(14, 8))
-    sns.heatmap(
-        accuracy_matrix,
-        xticklabels=[f"{lr:.0e}" for lr in lrs],
-        yticklabels=max_iters_list,
-        annot=True, fmt=".2f", cmap="crest", cbar_kws={'label': 'Validation Accuracy %'}
-    )
-    plt.xlabel("Learning Rate")
-    plt.ylabel("Max Iterations")
-    plt.title("Validation Accuracy Heatmap (Logistic Regression)")
-    plt.tight_layout()
-    plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
-    plt.show()
+        plt.figure(figsize=(14, 8))
+        sns.heatmap(
+            accuracy_matrix,
+            xticklabels=[f"{lr:.0e}" for lr in lrs],
+            yticklabels=max_iters_list,
+            annot=True, fmt=".2f", cmap="crest", cbar_kws={'label': 'Validation Accuracy %'}
+        )
+        plt.xlabel("Learning Rate")
+        plt.ylabel("Max Iterations")
+        plt.title("Validation Accuracy Heatmap (Logistic Regression)")
+        plt.tight_layout()
+        plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
+        plt.show()
 
     if args.method == "kmeans" and not args.test:
         print("\nHyperparameter search for KMeans:")
@@ -299,7 +272,7 @@ def main(args):
         plt.legend()
         plt.grid(True)
         plt.savefig('kmeans_accuracy_vs_k.png')
-        #plt.show(block=False)
+        plt.show()  # Display the plot
 
         # 2. Plot F1-score vs. K for different max_iters
         plt.figure(figsize=(12, 8))
@@ -318,7 +291,7 @@ def main(args):
         plt.legend()
         plt.grid(True)
         plt.savefig('kmeans_f1_vs_k.png')
-        #plt.show(block=False)
+        plt.show()  # Display the plot
 
         
         # 3. Plot training time vs. K
@@ -338,7 +311,7 @@ def main(args):
         plt.legend()
         plt.grid(True)
         plt.savefig('kmeans_training_time_vs_k.png')
-        plt.show(block=False)
+        plt.show()  # Display the plot
             
 if __name__ == "__main__":
     # Definition of the arguments that can be given through the command line (terminal).
@@ -354,7 +327,7 @@ if __name__ == "__main__":
         "--data_path", default="data", type=str, help="path to your dataset"
     )
     parser.add_argument(
-        "--data_type", default="features", type=str, help="features/original(MS2)"
+        "--data_type", default="features", type=str, help="features/original(MS2)/heart_disease"
     )
     parser.add_argument(
         "--K", type=int, default=1, help="number of neighboring datapoints used for knn"
