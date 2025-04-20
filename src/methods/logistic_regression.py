@@ -46,14 +46,13 @@ class LogisticRegression(object):
         Returns:
             pred_labels (array): target of shape (N,)
         """
-        training_data = (training_data - np.mean(training_data, axis=0)) / np.std(training_data, axis=0)
         N, D = training_data.shape
         # Get number of classes and convert labels to one-hot encoding
         n_classes = get_n_classes(training_labels)
         y_onehot = label_to_onehot(training_labels, n_classes)
         
         # Initialize weights and bias
-        self.weights = np.zeros((n_classes, D))
+        self.weights = np.random.randn(n_classes, D) * 0.01
         self.bias = np.zeros(n_classes)
         
         # Gradient descent
@@ -91,10 +90,7 @@ class LogisticRegression(object):
         Returns:
             pred_labels (array): labels of shape (N,)
         """
-        # Compute scores
         scores = np.dot(test_data, self.weights.T) + self.bias  # (N, C)
-        
-        # Get class with highest probability
-        pred_labels = np.argmax(scores, axis=1)
-        
+        probs = self.softmax(scores)  # (N, C)
+        pred_labels = np.argmax(probs, axis=1)
         return pred_labels
