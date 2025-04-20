@@ -163,9 +163,6 @@ def main(args):
             
             # Store accuracies for this max_iters value
             results[max_iters] = accuracies
-        
-        # Create directory for plots if it doesn't exist
-        os.makedirs('plots', exist_ok=True)
 
         print(f"Best hyperparameters: lr={best_lr:.1e}, max_iters={best_max_iters}")
         print(f"Best validation accuracy: {best_acc:.3f}%")
@@ -201,7 +198,7 @@ def main(args):
         plt.ylabel("Max Iterations")
         plt.title("Validation Accuracy Heatmap (Logistic Regression)")
         plt.tight_layout()
-        plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
+        plt.savefig("logistic_regression_hyperparam_heatmap.png")
         plt.show()
 
     if args.method == "knn" and not args.test:
