@@ -135,8 +135,6 @@ def main(args):
         learning_rates = [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1.0]
         max_iters_options = [10, 30, 35, 40, 45, 50, 100, 200, 300, 400, 500, 1000]
         
-        # Create dictionaries to store results
-        results = {max_iter: [] for max_iter in max_iters_options}
         all_accuracies = []
         
         for max_iters in max_iters_options:
@@ -160,9 +158,6 @@ def main(args):
                     best_acc = val_acc
                     best_lr = lr
                     best_max_iters = max_iters
-            
-            # Store accuracies for this max_iters value
-            results[max_iters] = accuracies
 
         print(f"Best hyperparameters: lr={best_lr:.1e}, max_iters={best_max_iters}")
         print(f"Best validation accuracy: {best_acc:.3f}%")
@@ -182,6 +177,7 @@ def main(args):
                     if acc_lr == lr and acc_iter == max_iter:
                         accuracy_matrix[i, j] = acc
 
+        # Plot heatmap for validation accuracy
         vmax = np.max(accuracy_matrix)
         plt.figure(figsize=(14, 8))
         sns.heatmap(
@@ -291,9 +287,6 @@ def main(args):
                 
                 # Store results for plotting
                 results.append((k, max_iters, val_acc, val_f1))
-                
-                #print(f"    Validation accuracy: {val_acc:.3f}% - F1-score: {val_f1:.6f}")
-                #print(f"    Training time: {train_time:.4f}s - Prediction time: {pred_time:.4f}s")
                 
                 # Update best parameters if better
                 if val_acc > best_acc:
