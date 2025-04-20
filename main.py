@@ -263,7 +263,7 @@ def main(args):
 
     if args.method == "knn" and not args.test:
 
-        kmax = 40 if args.K < 40 else args.K
+        kmax = 50 if args.K < 40 else args.K
         K = 5
         k_range = np.arange(1, kmax+1)
 
@@ -272,7 +272,7 @@ def main(args):
         cv_val_accs, cv_val_f1s = KNN.run_cv_for_hyperparam(xtrain_normalized, ytrain, K, k_range)
         print(f"\n5-Fold Cross Validation on {kmax} values of k in {time.time()-t0:.2f}s")
 
-        # pick best k by validation accuracy
+        # picking best k found for highest validation accuracy
         best_idx = np.argmax(cv_val_accs)
         best_k   = k_range[best_idx]
         print(f"\nBest k by 5-Fold Cross Validation : {best_k} \n---> Validation accuracy = {cv_val_accs[best_idx]:.3f}\n---> F1-score = {cv_val_f1s[best_idx]:.3f}")
@@ -286,7 +286,7 @@ def main(args):
             full_tr_accs[i] = accuracy_fn(pred, ytrain)
             full_tr_f1s [i] = macrof1_fn(pred, ytrain)
 
-        # Final model on all training data to test model on test data
+        # Final model runned on all training data to test model on test data
         final = KNN(k=best_k)
         pred_train = final.fit(xtrain_normalized, ytrain)
         pred_test = final.predict(xtest_normalized)
@@ -296,7 +296,7 @@ def main(args):
         print(f"\nFINAL [k={best_k}] : TRAIN accuracy = {tr_acc:.3f}%, F1-score = {tr_f1:.6f}")
         print(f"FINAL [k={best_k}] : TEST  accuracy = {te_acc:.3f}%, F1-score = {te_f1:.6f}\n")
 
-        # CV and full‐train plot
+        # Cross Val and Full‐train plot
         plt.figure(figsize=(8,6))
         plt.plot(k_range, cv_val_accs ,color = 'r', marker = '.',label="CV-validation Accuracy")
         plt.plot(k_range, cv_val_f1s *100 ,color = 'r', linestyle = '--', marker = '.', label="CV-validation F1-score")
