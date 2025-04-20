@@ -16,50 +16,7 @@ class KMeans(object):
         self.best_permutation = None
 
     def fit(self, training_data, training_labels):
-        """
-        Trains the model, returns predicted labels for training data.
-        Hint:
-            (1) Since Kmeans is unsupervised clustering, 
-            we don't need the labels for training. 
-            But you may want to use it to determine the number of clusters.
-            (2) Kmeans is sensitive to initialization. 
-            You can try multiple random initializations when using this classifier.
 
-        Arguments:
-            training_data (np.array): training data of shape (N,D)
-            training_labels (np.array): labels of shape (N,).
-        Returns:
-            pred_labels (np.array): labels of shape (N,)
-        """
-
-        """
-        nbrClusters = training_labels.size 
-        nbrdata = training_data.shape[0]
-        init_index = np.random.choice(nbrdata, size = nbrClusters, replace = False)
-        init_cluster = training_data[init_index]
-        pred_labels = np.zeros(nbrdata)
-        k = 0
-        for i in training_data:
-            y = 100000000000000000000000000000000000000000000000
-            closest_cluster = -1
-            for j in range(nbrClusters):
-                x = np.linalg.norm(init_cluster[j] - i)
-                if(x<y):
-                    y = x
-                    closest_cluster = j
-            pred_labels[k] = closest_cluster
-            k += 1
-        for cluster in range(nbrClusters):
-            new_centroid = np.mean(training_data[pred_labels == cluster], axis=0)
-            self.centroids[cluster] = new_centroid
-                
-
-        ##
-        ###
-        #### YOUR CODE HERE!
-        ###
-        ##
-        """
         # Determine number of clusters from unique labels
         unique_labels = np.unique(training_labels)
         num_clusters = len(unique_labels)
@@ -125,14 +82,6 @@ class KMeans(object):
         Returns:
             test_labels (np.array): labels of shape (N,)
         """
-
-
-        ##
-        ###
-        #### YOUR CODE HERE!
-        ###
-        ##
-
         if self.centroids is None:
             raise Exception("Model not trained. Call fit() before predict().")
         
