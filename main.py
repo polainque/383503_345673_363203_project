@@ -132,7 +132,7 @@ def main(args):
         best_max_iters = args.max_iters
         
         # We try different learning rates
-        learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1]
+        learning_rates = [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1.0]
         max_iters_options = [10, 30, 35, 40, 45, 50, 100, 200, 300, 400, 500, 1000]
         
         # Create dictionaries to store results
@@ -185,12 +185,17 @@ def main(args):
                     if acc_lr == lr and acc_iter == max_iter:
                         accuracy_matrix[i, j] = acc
 
+        vmax = np.max(accuracy_matrix)
         plt.figure(figsize=(14, 8))
         sns.heatmap(
             accuracy_matrix,
             xticklabels=[f"{lr:.0e}" for lr in lrs],
             yticklabels=max_iters_list,
-            annot=True, fmt=".2f", cmap="crest", cbar_kws={'label': 'Validation Accuracy %'}
+            annot=True, fmt=".2f", 
+            cmap="YlGnBu",
+            cbar_kws={'label': 'Validation Accuracy %'},
+            vmin = 0,
+            vmax = vmax
         )
         plt.xlabel("Learning Rate")
         plt.ylabel("Max Iterations")
