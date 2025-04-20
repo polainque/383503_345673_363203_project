@@ -2,6 +2,8 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+import seaborn as sns
 import time
 
 
@@ -182,25 +184,46 @@ def main(args):
                     if acc_lr == lr and acc_iter == max_iter:
                         accuracy_matrix[i, j] = acc
 
-        # Create grid for plotting
-        log_lrs = np.log10(lrs)  # Log scale for better visualization
-        X, Y = np.meshgrid(log_lrs, max_iters_list)
-        Z = accuracy_matrix
-
-        # Plot 3D surface
-        fig = plt.figure(figsize=(10, 6))
-        ax = fig.add_subplot(111, projection='3d')
-        surf = ax.plot_surface(X, Y, Z, cmap='viridis', edgecolor='k')
-
-        ax.set_xlabel('log10(Learning Rate)')
-        ax.set_ylabel('Max Iterations')
-        ax.set_zlabel('Validation Accuracy')
-        ax.set_title('Validation Accuracy vs Learning Rate & Max Iterations')
-        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-
-        plt.tight_layout()
-        plt.savefig("plots/logistic_regression_hyperparam_surface.png")
-        plt.show()
+    #plt.figure(figsize=(12, 6))
+#
+    #custom_cmap = ListedColormap(['#A63446', '#E8846B']) 
+#
+    ## Set vmin and vmax to the min and max values in your data
+    #vmin = np.min(accuracy_matrix)
+    #vmax = np.max(accuracy_matrix)
+#
+    ## Create the heatmap with the custom colormap
+    #sns.heatmap(
+    #    accuracy_matrix,
+    #    xticklabels=[f"{lr:.0e}" for lr in lrs],
+    #    yticklabels=max_iters_list,
+    #    annot=True, 
+    #    fmt=".2f",
+    #    cmap=custom_cmap,
+    #    vmin=vmin,
+    #    vmax=vmax,
+    #    cbar_kws={'ticks': [vmin, vmax]}  # Only show min and max on colorbar
+    #)
+#
+    #plt.xlabel("Learning Rate")
+    #plt.ylabel("Max Iterations")
+    #plt.title("Validation Accuracy Heatmap (Logistic Regression)")
+    #plt.tight_layout()
+    #plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
+    #plt.show()
+    plt.figure(figsize=(14, 8))
+    sns.heatmap(
+        accuracy_matrix,
+        xticklabels=[f"{lr:.0e}" for lr in lrs],
+        yticklabels=max_iters_list,
+        annot=True, fmt=".2f", cmap="crest", cbar_kws={'label': 'Validation Accuracy %'}
+    )
+    plt.xlabel("Learning Rate")
+    plt.ylabel("Max Iterations")
+    plt.title("Validation Accuracy Heatmap (Logistic Regression)")
+    plt.tight_layout()
+    plt.savefig("plots/logistic_regression_hyperparam_heatmap.png")
+    plt.show()
 
     if args.method == "kmeans" and not args.test:
         print("\nHyperparameter search for KMeans:")
