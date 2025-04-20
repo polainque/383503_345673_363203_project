@@ -2,8 +2,9 @@ import argparse
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('TkAgg') 
 import matplotlib.pyplot as plt
+
 import seaborn as sns
 import time
 import os
@@ -263,7 +264,7 @@ def main(args):
 
         for k in k_values:
             for max_iters in max_iters_options:
-                print(f"  Testing K={k}, max_iters={max_iters}...")
+                #print(f"  Testing K={k}, max_iters={max_iters}...")
                 
                 # Initialize and train model
                 kmeans_model = KMeans(K=k, max_iters=max_iters)
@@ -289,8 +290,8 @@ def main(args):
                 # Store results for plotting
                 results.append((k, max_iters, val_acc, val_f1))
                 
-                print(f"    Validation accuracy: {val_acc:.3f}% - F1-score: {val_f1:.6f}")
-                print(f"    Training time: {train_time:.4f}s - Prediction time: {pred_time:.4f}s")
+                #print(f"    Validation accuracy: {val_acc:.3f}% - F1-score: {val_f1:.6f}")
+                #print(f"    Training time: {train_time:.4f}s - Prediction time: {pred_time:.4f}s")
                 
                 # Update best parameters if better
                 if val_acc > best_acc:
