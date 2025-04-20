@@ -256,7 +256,7 @@ def main(args):
         best_max_iters = args.max_iters
 
         # Try different K values and max iterations
-        k_values = [2, 3, 4, 5, 8, 10]
+        k_values = [2, 3, 4, 5, 8]
         max_iters_options = [100, 300, 500, 1000]
 
         # Store results for plotting
